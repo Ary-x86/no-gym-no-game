@@ -120,7 +120,7 @@ chmod +x ~/.local/bin/gym_gate_check.py
 
 ### 2. Wrap Steam
 
-Replace `/usr/bin/steam` with a wrapper:
+Make a copy of the steam executable called 'steam.real'. Replace `/usr/bin/steam` with a wrapper. To be safe, first locate and backup your steam files / computer in case this breaks something. I take NO responsibility if anything goes wrong. You are altering system files and files may be at different locations and you may not use the same distro as me. Copy paste the commands below one by one into the terminal:
 
 ```bash
 sudo mv /usr/bin/steam /usr/bin/steam.real
