@@ -83,53 +83,6 @@ No domain needed — Fly gives you `*.fly.dev`.
 
 ---
 
-## API Endpoints
-
-### `POST /checkin`
-
-Upload a gym check-in (called by iPhone Shortcut).
-
-* **Form data:**
-
-  * `lat`: float (your GPS latitude)
-  * `lon`: float (your GPS longitude)
-  * `photo`: file upload (JPEG with EXIF metadata)
-
-* **Response (example):**
-
-```json
-{
-  "ok": true,
-  "timestamp_utc": "2025-09-14T18:11:06.029359+00:00",
-  "gym": "Basic-Fit Almere Centrum (Donjon)",
-  "distance_m": 27.4
-}
-```
-
-Errors (`400 Bad Request`) if:
-
-* Too far from gym
-* Photo has no EXIF timestamp
-* EXIF timestamp too old/new
-
----
-
-### `GET /status`
-
-Returns the current check-in status.
-
-* **Response (example):**
-
-```json
-{
-  "checked_in": true,
-  "valid_until": "2025-09-17T18:11:06.029359+00:00",
-  "timestamp_utc": "2025-09-14T18:11:06.029359+00:00",
-  "gym": "Basic-Fit Almere Centrum (Donjon)",
-  "distance_m": 27.4
-}
-```
-
 ---
 
 ## Client Setup (Linux PC with Steam)
@@ -299,6 +252,59 @@ Example response will be shown inside the Shortcut.
 **\[[iPhone Shortcut to send the request when at the gym](https://www.icloud.com/shortcuts/a4d85c9f231042d5b436b29601cb1df1)]**
 
 ---
+
+
+
+## API Endpoints
+
+### `POST /checkin`
+
+Upload a gym check-in (called by iPhone Shortcut).
+
+* **Form data:**
+
+  * `lat`: float (your GPS latitude)
+  * `lon`: float (your GPS longitude)
+  * `photo`: file upload (JPEG with EXIF metadata)
+
+* **Response (example):**
+
+```json
+{
+  "ok": true,
+  "timestamp_utc": "2025-09-14T18:11:06.029359+00:00",
+  "gym": "Basic-Fit Almere Centrum (Donjon)",
+  "distance_m": 27.4
+}
+```
+
+Errors (`400 Bad Request`) if:
+
+* Too far from gym
+* Photo has no EXIF timestamp
+* EXIF timestamp too old/new
+
+---
+
+### `GET /status`
+
+Returns the current check-in status.
+
+* **Response (example):**
+
+```json
+{
+  "checked_in": true,
+  "valid_until": "2025-09-17T18:11:06.029359+00:00",
+  "timestamp_utc": "2025-09-14T18:11:06.029359+00:00",
+  "gym": "Basic-Fit Almere Centrum (Donjon)",
+  "distance_m": 27.4
+}
+```
+
+
+
+
 
 ## Troubleshooting
 
