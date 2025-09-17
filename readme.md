@@ -118,9 +118,21 @@ Make it executable:
 chmod +x ~/.local/bin/gym_gate_check.py
 ```
 
-### 2. Wrap Steam
 
-Make a copy of the steam executable called 'steam.real'. Replace `/usr/bin/steam` with a wrapper. To be safe, first locate and backup your steam files / computer in case this breaks something. I take NO responsibility if anything goes wrong. You are altering system files and files may be at different locations and you may not use the same distro as me. Copy paste the commands below one by one into the terminal:
+---
+
+### 2. Wrap Steam (native package)
+
+> ⚠️ You’re modifying system files. Paths may differ by distro/package. If you use **Flatpak Steam**, don’t do this (see notes below). Proceed at your own risk.
+
+**Check what you have:**
+
+```bash
+which steam || true         # native package is usually /usr/bin/steam
+flatpak list | grep -i steam || true  # shows Flatpak Steam if installed
+```
+
+**Wrap the native binary** (moves the real Steam to `steam.real` and installs a wrapper that runs your gym check first):
 
 ```bash
 sudo mv /usr/bin/steam /usr/bin/steam.real
@@ -144,13 +156,57 @@ EOF
 sudo chmod +x /usr/bin/steam
 ```
 
-You can find the most up to date file in SYSTEM_FILES_TO_BE_PLACED/files-no-symlinks/* in this repo, use that one. Don't copy from the readme, it may be out of date.
+**Verify:**
 
+```bash
+head -n 3 /usr/bin/steam
+ls -l /usr/bin/steam.real
+```
 
+> **Flatpak users:** Do **not** wrap `/usr/bin/steam`. Instead, make your `steam://` URL handler and game `.desktop` files point to your wrapper at `~/.local/bin/steam`. (I include those steps elsewhere in this README.)
+
+> **Repo note:** Prefer the canonical script under `SYSTEM_FILES_TO_BE_PLACED/files-no-symlinks/*` in this repo if it differs from the snippet above.
+
+---
 
 ### 3. Pacman hook (Arch Linux)
 
-Steam updates overwrite `/usr/bin/steam`. Add a hook to reapply the wrapper automatically:
+Steam updates will overwrite `/usr/bin/steam`. Pacman hooks require `Exec=` to be a single command, so we install a small helper script and have the hook call it.
+
+**3.1 Install the helper script (as root)**
+
+```bash
+sudo install -Dm755 /dev/stdin /usr/local/bin/gym-steam-wrap.sh <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Re-wrap native Steam if it's not already our wrapper
+if [[ -f /usr/bin/steam ]] && ! grep -q "Gym Gate Steam wrapper" /usr/bin/steam 2>/dev/null; then
+  mv -f /usr/bin/steam /usr/bin/steam.real.new || true
+
+  cat > /usr/bin/steam <<'WRAP'
+#!/usr/bin/env bash
+# Gym Gate Steam wrapper
+CHECK="$HOME/.local/bin/gym_gate_check.py"
+if ! "$CHECK" >/dev/null 2>&1; then
+  msg="Steam is locked. Do a Basic-Fit check-in to unlock."
+  if command -v zenity >/dev/null 2>&1; then
+    zenity --error --text="$msg"
+  else
+    echo "$msg" >&2
+  fi
+  exit 1
+fi
+exec /usr/bin/steam.real "$@"
+WRAP
+
+  chmod +x /usr/bin/steam
+  mv -f /usr/bin/steam.real.new /usr/bin/steam.real || true
+fi
+EOF
+```
+
+**3.2 Create the pacman hook**
 
 ```bash
 sudo install -d /etc/pacman.d/hooks
@@ -164,26 +220,29 @@ Target = usr/bin/steam
 [Action]
 Description = Re-applying Gym Gate Steam wrapper...
 When = PostTransaction
-Exec = /bin/sh -c '
-  if [ -f /usr/bin/steam ] && ! grep -q "Gym Gate Steam wrapper" /usr/bin/steam 2>/dev/null; then
-    mv /usr/bin/steam /usr/bin/steam.real.new || true
-    cat >/usr/bin/steam <<WRAP
-#!/usr/bin/env bash
-# Gym Gate Steam wrapper
-CHECK="\$HOME/.local/bin/gym_gate_check.py"
-if ! "\$CHECK" >/dev/null 2>&1; then
-  msg="Steam is locked. Do a Basic-Fit check-in to unlock."
-  if command -v zenity >/dev/null 2>&1; then zenity --error --text="\$msg"; else echo "\$msg" >&2; fi
-  exit 1
-fi
-exec /usr/bin/steam.real.new "\$@"
-WRAP
-    chmod +x /usr/bin/steam
-    mv /usr/bin/steam.real.new /usr/bin/steam.real || true
-  fi
-'
+Exec = /usr/bin/bash /usr/local/bin/gym-steam-wrap.sh
 EOF
+```
 
+**3.3 (Optional) Apply immediately & test**
+
+```bash
+# apply now if needed
+sudo /usr/local/bin/gym-steam-wrap.sh
+
+# trigger hook on reinstall/upgrade
+sudo pacman -S steam
+
+# verify after
+head -n 3 /usr/bin/steam
+ls -l /usr/bin/steam.real
+```
+
+**Uninstall (revert)**
+
+```bash
+sudo rm -f /etc/pacman.d/hooks/steam-wrapper.hook /usr/local/bin/gym-steam-wrap.sh
+sudo mv -f /usr/bin/steam.real /usr/bin/steam
 ```
 
 
