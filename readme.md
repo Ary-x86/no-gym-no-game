@@ -124,6 +124,7 @@ Make a copy of the steam executable called 'steam.real'. Replace `/usr/bin/steam
 
 ```bash
 sudo mv /usr/bin/steam /usr/bin/steam.real
+
 sudo tee /usr/bin/steam >/dev/null <<'EOF'
 #!/usr/bin/env bash
 # Gym Gate Steam wrapper
@@ -139,6 +140,7 @@ if ! "$CHECK" >/dev/null 2>&1; then
 fi
 exec /usr/bin/steam.real "$@"
 EOF
+
 sudo chmod +x /usr/bin/steam
 ```
 
