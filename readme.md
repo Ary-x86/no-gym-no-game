@@ -312,8 +312,9 @@ Returns the current check-in status.
 
 * **Invalid photo / no EXIF metadata**
 
-  * Some apps strip metadata. Always use iPhone Camera (not screenshots).
-  * Check storage: if iOS runs out of space, photos may lose EXIF.
+  * Some apps strip metadata. Always use iPhone Camera (not screenshots). Make sure to save the photo in the shortcut first, then fetch the last photo in 'recents'.
+  * Check storage: if iOS runs out of space, the shortcut stops working properly.
+  * The shortcut is made and tested on iOS 16. Contact me if it doesn't work on newer versions.
 
 * **Steam desktop shortcuts bypass wrapper**
 
