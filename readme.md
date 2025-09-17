@@ -291,8 +291,3 @@ It works, but it’s not polished or secure.
 If you want to cheat, you can — the point is to make it just annoying enough that you’d rather **go to the gym**.
 
 ```
-
----
-
-Do you also want me to include a **ready-to-paste `gym_locations.json` example** in the README (with multiple gyms) so it’s fully copy-paste runnable?
-```
