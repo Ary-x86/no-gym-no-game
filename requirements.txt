@@ -4,3 +4,4 @@ pydantic
 python-multipart
 Pillow
 piexif
+pillow-heif

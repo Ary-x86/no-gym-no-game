@@ -8,6 +8,8 @@ import json, math, io, piexif
 # io wraps raw bytes into a file-like object (io.BytesIO) for Pillow.
 # piexif reads EXIF metadata (we need DateTimeOriginal).
 from PIL import Image   #call Image.open(...).verify() to check the upload is really an image.
+import pillow_heif
+pillow_heif.register_heif_opener()  # let Pillow open HEIC/HEIF
 
 
 #short desc: app that received lat and lon location from iphone shortcut and picture (see func: checkin) and verifies its near a gym, if so, toggle a var to true (seen in /status) for x amount of days
@@ -63,14 +65,29 @@ def nearest_gym(lat, lon):
 def exif_datetime_original(im_bytes: bytes):
     #im_bytes is raw bytes of the image, see raw = photo.read() under /checkin
     #FastAPI gives us the file content; piexif.load can parse EXIF directly from bytes.
+    #first we try piexiff for jpeg/tiff, fallback is pillow EXIF since I got a lot of errors.
     try:
         exif = piexif.load(im_bytes)
-        dt = exif["Exif"].get(piexif.ExifIFD.DateTimeOriginal)      #pulls the original capture time
-        if not dt: return None      #if theres no capture time, return None, will give a httpexecption and not change anything
-        s = dt.decode() #if there is, decode it 
-        return datetime.strptime(s, "%Y:%m:%d %H:%M:%S").replace(tzinfo=timezone.utc)       #format as YYYY:MM:DD HH:MM:SS and mark as UTC (EXIF would give local time)
+        dt = exif["Exif"].get(piexif.ExifIFD.DateTimeOriginal) or exif["0th"].get(piexif.ImageIFD.DateTime)      #pulls the original capture time
+        if dt:
+            s = dt.decode() if isinstance(dt, (bytes, bytearray)) else str(dt)
+            return datetime.strptime(s.strip(), "%Y:%m:%d %H:%M:%S").replace(tzinfo=timezone.utc)   #format as YYYY:MM:DD HH:MM:SS and mark as UTC (EXIF would give local time)
+    except Exception:    #if theres no capture time, try fall, if that fails return None and it will give a httpexecption and not change anything
+        pass
+    # Fallback to Pillow EXIF (works for HEIC when pillow-heif is registered)
+    try:
+        img = Image.open(io.BytesIO(im_bytes))
+        ex = img.getexif()
+        # 36867 = DateTimeOriginal, 306 = DateTime
+        dt = ex.get(36867) or ex.get(306)
+        if dt:
+            if isinstance(dt, (bytes, bytearray)):
+                dt = dt.decode(errors="ignore")
+            return datetime.strptime(dt.strip(), "%Y:%m:%d %H:%M:%S").replace(tzinfo=timezone.utc)
     except Exception:
-        return None
+        pass
+
+    return None
 
 
 #All below will be called from the phone (through a shortcut) or it can be a curl request through any terminal if on pc
@@ -91,12 +108,39 @@ async def checkin(
     #     Things returned by asyncio functions (like asyncio.sleep, network requests, etc.).
     # While the function is paused at await, the event loop can run other tasks, making it possible to write asynchronous, non-blocking code.
     
+
+
+
     #below we ned to use await because because photo.read() is asynchronous, without await you'd get a coroutine obj of UploadFile obj.
     raw = await photo.read()    #pauses checkin() here until .read() is done, so pause checkin() until the file bytes are actually read, without blocking the whole server. the server remains free to handle other requests.
     try:
         Image.open(io.BytesIO(raw)).verify()    #q8uick wrap in BytesIO and ask Pillow to check if its an image with .verify()
     except Exception:
-        raise HTTPException(400, "invalid image")       #if not an image, quit and raise 400  Bad Request
+        #raise HTTPException(400, "invalid image")       #if not an image, quit and raise 400  Bad Request
+        pass
+
+    # Sanity: non-empty upload
+    if not raw or len(raw) < 1024:
+        raise HTTPException(400, f"invalid image: file empty/too small ({0 if not raw else len(raw)} bytes)")
+
+    # Try to decode the image (more tolerant than verify())
+    try:
+        img = Image.open(io.BytesIO(raw))
+        img.load()          # actually decode
+        fmt = (img.format or "").upper()
+    except UnidentifiedImageError:
+        head = raw[:64]
+        # Nice hint if a HEIC slipped through without plugin (shouldn’t happen after register_heif_opener)
+        if b"ftypheic" in head or b"ftypheif" in head or b"ftypmif1" in head:
+            raise HTTPException(400, "invalid image format: HEIC/HEIF not recognized (server missing pillow-heif?)")
+        raise HTTPException(400, "invalid image data: unable to decode")
+    except Exception as e:
+        raise HTTPException(400, f"invalid image: {e}")
+
+
+
+
+
 
     # check gym distance, get the minimum gym distance, then check if that min dist is as should be, within the allowed radius
     gym_name, distance = nearest_gym(lat, lon)
