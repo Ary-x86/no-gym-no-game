@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import requests, sys, datetime
 
-URL = "https://cloud-gym-gate.fly.dev/status"  # change to your Fly.io URL
+URL = "https://example-gym.fly.dev/status"  # change to your Fly.io URL
 DAYS_VALID = 3
 
 try:
