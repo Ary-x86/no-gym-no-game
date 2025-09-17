@@ -136,13 +136,14 @@ Returns the current check-in status.
 
 ### 1. Gym check script
 
-Save `gym_gate_check.py` in `~/.local/bin/`:
+Save `gym_gate_check.py` in `~/.local/bin/` and CHANGE THE URL TO YOUR FLY.IO URL:
 
 ```python
 #!/usr/bin/env python3
 import requests, sys
 
-URL = "https://<your-app-name>.fly.dev/status"
+URL = "https://<your-app-name>.fly.dev/status"      #<--- CHANGE THIS
+DAYS_VALID = 3
 
 try:
     r = requests.get(URL, timeout=5)
@@ -155,6 +156,8 @@ except Exception as e:
     print(f"Error contacting server: {e}")
     sys.exit(1)
 ```
+
+You can find the most up to date file in SYSTEM_FILES_TO_BE_PLACED/files-no-symlinks/* in this repo, use that one. Don't copy from the readme, it may be out of date.
 
 Make it executable:
 
@@ -185,6 +188,10 @@ exec /usr/bin/steam.real "$@"
 EOF
 sudo chmod +x /usr/bin/steam
 ```
+
+You can find the most up to date file in SYSTEM_FILES_TO_BE_PLACED/files-no-symlinks/* in this repo, use that one. Don't copy from the readme, it may be out of date.
+
+
 
 ### 3. Pacman hook (Arch Linux)
 
@@ -221,7 +228,48 @@ WRAP
   fi
 '
 EOF
+
 ```
+
+
+
+### 4. Update gym_locations.json to include your gym. Currently it contains Basic Fit gyms in Almere, The Netherlands only. 
+
+Change the name, latitude and longitude. You can get the latitude and longitude via Google Maps > right click any location on the map > replace the 'lat' and 'lon' values.
+
+```json
+[
+  {
+    "name": "Basic-Fit Almere Centrum (Donjon)",
+    "lat": 52.36971,
+    "lon": 5.22105
+  },
+]
+
+```
+
+
+
+### 5. Change variables in app.py to your liking
+
+In app.py you'll find 3 variables you can freely change to your liking. Or you can keep them unchanged. It's up to you:
+
+```python
+MAX_EXIF_AGE_MIN = 15           #how many minutes old the uploaded photo can be (to prevent cheating by uploading an old photo)
+ALLOWED_RADIUS_METERS = 200     #radius around the any of the gymns where the location must be at time of verification using the shortcut
+PASS_VALID_FOR = timedelta(days=3)      #how many days steam can be opened after going to the gym
+```
+
+Note: if you change 'PASS_VALID_FOR', you have to change 'DAYS_VALID' in 'gym_gate_check.py' too. They have to be the same value.
+
+So if you change in app.py: PASS_VALID_FOR = timedelta(days=2) 
+You have to do in 'gym_gate_check.py': DAYS_VALID = 2
+
+
+
+
+### 6. Deploy your app (assuming you already set up your server)
+
 
 Now, even after Steam updates, the wrapper is re-applied.
 
@@ -248,7 +296,7 @@ You need an iOS Shortcut that:
 Example response will be shown inside the Shortcut.
 
 👉 iCloud link:
-**\[[Your Shortcut iCloud Link Here](https://www.icloud.com/shortcuts/a4d85c9f231042d5b436b29601cb1df1)]**
+**\[[iPhone Shortcut to send the request when at the gym](https://www.icloud.com/shortcuts/a4d85c9f231042d5b436b29601cb1df1)]**
 
 ---
 
