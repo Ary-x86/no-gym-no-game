@@ -247,8 +247,8 @@ You need an iOS Shortcut that:
 
 Example response will be shown inside the Shortcut.
 
-👉 iCloud link (to be filled in):
-**\[Your Shortcut iCloud Link Here]**
+👉 iCloud link:
+**\[[Your Shortcut iCloud Link Here](https://www.icloud.com/shortcuts/a4d85c9f231042d5b436b29601cb1df1)]**
 
 ---
 
