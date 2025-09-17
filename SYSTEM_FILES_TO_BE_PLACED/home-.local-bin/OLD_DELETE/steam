@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+CHECK=~/.local/bin/gym_gate_check.py
+if ! "$CHECK" >/dev/null 2>&1; then
+  msg="Steam is locked. Do a Basic-Fit check-in to unlock."
+  if command -v zenity >/dev/null; then zenity --error --text="$msg"; else echo "$msg" >&2; fi
+  exit 1
+fi
+
+REAL_STEAM="$(command -v -p steam 2>/dev/null | tail -n1)"
+[ -z "$REAL_STEAM" ] && REAL_STEAM="/usr/bin/steam"
+exec "$REAL_STEAM" "$@"
+
+
+#run chmod +x ~/.local/bin/steam
