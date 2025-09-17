@@ -38,7 +38,7 @@ This ensures you **must go to the gym at least every 3 days** if you want to pla
 
 ### 1. Requirements
 - A [Fly.io](https://fly.io) account  
-- The `flyctl` CLI tool installed locally  
+- The `flyctl` CLI tool installed locally  (and authorized, with flyctl auth login)
 - Docker (Fly uses it under the hood, you don’t interact with it much)
 
 ### 2. Launch a new app
