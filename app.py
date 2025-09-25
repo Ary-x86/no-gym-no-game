@@ -7,9 +7,11 @@ import json, math, io, piexif
 # math only for trig inside the Haversine formula.
 # io wraps raw bytes into a file-like object (io.BytesIO) for Pillow.
 # piexif reads EXIF metadata (we need DateTimeOriginal).
-from PIL import Image   #call Image.open(...).verify() to check the upload is really an image.
+from PIL import Image, UnidentifiedImageError, ExifTags   #call Image.open(...).verify() to check the upload is really an image.
 import pillow_heif
 pillow_heif.register_heif_opener()  # let Pillow open HEIC/HEIF
+
+import os
 
 
 #short desc: app that received lat and lon location from iphone shortcut and picture (see func: checkin) and verifies its near a gym, if so, toggle a var to true (seen in /status) for x amount of days
@@ -17,11 +19,21 @@ pillow_heif.register_heif_opener()  # let Pillow open HEIC/HEIF
 
 app = FastAPI(title="Gym Gate Cloud")   #build the webapp, title is shown in docs an shi
 
-STORAGE_FILE = Path("latest_checkin.json")  #This file (in container directory) stores the most recent check-in (timestamp, gym, distance).
+#STORAGE_FILE = Path("latest_checkin.json")  
+STORAGE_FILE = Path("/data/latest_checkin.json")    #This file (in container directory) stores the most recent check-in (timestamp, gym, distance).
 MAX_EXIF_AGE_MIN = 15           #how many minutes old the uplaoded photo can be
 ALLOWED_RADIUS_METERS = 200     #radius around the any of the gymns where the location must be
 PASS_VALID_FOR = timedelta(days=3)      #how many days steam can be opened after going to the gym
                                         #timedelta keeps it as a duration object that can be added to a datetime to get valid_until.
+                                        
+
+REQUIRE_EXIF = os.getenv("REQUIRE_EXIF", "1") == "1"  # default strict
+NO_EXIF_MAX_SKEW_SEC = 90  # accept uploads if they arrive within 90s of server 'now'
+
+print("GymGate STARTUP: REQUIRE_EXIF raw =", os.getenv("REQUIRE_EXIF"))
+print("GymGate STARTUP: REQUIRE_EXIF parsed =", REQUIRE_EXIF)
+
+
 
 # Load gyms, as a list of dicts, each dict has name, lat lon, as in the json
 with open("gym_locations.json") as f:
@@ -100,6 +112,25 @@ async def checkin(
 ):
     now = datetime.now(timezone.utc)    #get current time to compare, put in UTC for standardization
 
+
+    #I want to prevent people from cheating and giving an exact location, so if the coordinates are EXACTLY RIGHT
+    #That's sus and we can ask to try again
+
+    #so check it: GYMS is the list of dicts
+    for each_gym in GYMS:
+        if each_gym["lon"] == lon:
+            if each_gym["lat"] == lat:
+                raise HTTPException(400, "Suspicious Location... try again.")
+    
+    sus_locations = [(5.2203859, 52.3697456), (5.17539, 52.35219)]   #lon, lat
+
+    for loc in sus_locations:
+        if loc[0] == lon:
+            if loc[1] == lat:
+                raise HTTPException(400, "Suspicious Location... try again.")
+
+
+
     # validate photo
     #await is used inside an async function to pause the execution of that function until the result of an awaitable is read
     # You can await any awaitable object:
@@ -147,18 +178,32 @@ async def checkin(
     if distance > ALLOWED_RADIUS_METERS:
         raise HTTPException(400, f"too far from gym ({distance:.0f} m)")
 
-    # check exif timestamp
+    # # check exif timestamp
+    # exif_dt = exif_datetime_original(raw)
+
+    # if not exif_dt:     #if there is no valid time, raise 400
+    #     raise HTTPException(400, "photo missing EXIF metadata")
+    
+    # #if there is, check if its a fresh picture
+    # if exif_dt:
+    #     age_min = (now - exif_dt).total_seconds()/60    #get the difference between the picture and now in minutes
+    #     # the pic should be like a minute old, not be older then MAX_EXIF_AGE_MIN and not be 2 mins newer (if clocks are set weird)
+    #     if age_min < -2 or age_min > MAX_EXIF_AGE_MIN:
+    #         raise HTTPException(400, f"photo too old/new ({age_min:.1f} min)")  #if its not valid, raise 400
+
     exif_dt = exif_datetime_original(raw)
 
-    if not exif_dt:     #if there is no valid time, raise 400
-        raise HTTPException(400, "photo missing EXIF metadata")
-    
-    #if there is, check if its a fresh picture
-    if exif_dt:
-        age_min = (now - exif_dt).total_seconds()/60    #get the difference between the picture and now in minutes
-        # the pic should be like a minute old, not be older then MAX_EXIF_AGE_MIN and not be 2 mins newer (if clocks are set weird)
+    if REQUIRE_EXIF:
+        if not exif_dt:
+            raise HTTPException(400, "photo missing EXIF metadata")
+        age_min = (now - exif_dt).total_seconds() / 60
         if age_min < -2 or age_min > MAX_EXIF_AGE_MIN:
-            raise HTTPException(400, f"photo too old/new ({age_min:.1f} min)")  #if its not valid, raise 400
+            raise HTTPException(400, f"photo too old/new ({age_min:.1f} min)")
+    else:
+        # Fallback: no EXIF → just require the upload to be "now-ish"
+        # (We trust server 'now'; this is a personal tool, not anti-forensics.)
+        pass
+
 
     # save latest checkin
     #data is a dict
