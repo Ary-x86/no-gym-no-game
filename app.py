@@ -122,7 +122,7 @@ async def checkin(
             if each_gym["lat"] == lat:
                 raise HTTPException(400, "Suspicious Location... try again.")
     
-    sus_locations = [(5.2203859, 52.3697456), (5.17539, 52.35219)]   #lon, lat
+    sus_locations = [(5.2203859, 52.3697456), (5.17539, 52.35219), (5.2835011, 52.3806684), 5.2190103, 52.3696196]   #lon, lat
 
     for loc in sus_locations:
         if loc[0] == lon:
@@ -176,7 +176,7 @@ async def checkin(
     # check gym distance, get the minimum gym distance, then check if that min dist is as should be, within the allowed radius
     gym_name, distance = nearest_gym(lat, lon)
     if distance > ALLOWED_RADIUS_METERS:
-        raise HTTPException(400, f"too far from gym ({distance:.0f} m)")
+        raise HTTPException(400, f"too far from gym ({distance:.0f} m). This service currently only works in Almere")
 
     # # check exif timestamp
     # exif_dt = exif_datetime_original(raw)
