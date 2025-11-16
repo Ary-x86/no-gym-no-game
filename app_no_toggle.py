@@ -210,8 +210,7 @@ async def checkin(
     data = {
         "timestamp_utc": now.isoformat(),
         "gym": gym_name,
-        "distance_m": round(distance, 1),
-        "manual_lock": False,  # new pass always starts unlocked
+        "distance_m": round(distance, 1)
     }
     STORAGE_FILE.write_text(json.dumps(data))   #dump the dict as json, and over write the text to latest_checkin.json (stroage file var)
 
@@ -230,64 +229,8 @@ def status():
     valid_until = ts + PASS_VALID_FOR   #do + 3 days 
     now = datetime.now(timezone.utc)    #get current time
 
-    gym_valid = now < valid_until
-    manual_lock = data.get("manual_lock", False)
-
-    # What the PC cares about:
-    checked_in = gym_valid and not manual_lock
-
-
-    resp = {
-        "checked_in": checked_in,          # used by gym_gate_check.py
-        "gym_valid": gym_valid,            # just extra info
-        "manual_lock": manual_lock,        # extra info
-        "valid_until": valid_until.isoformat(),
-    }
-    # Add original fields: timestamp_utc, gym, distance_m, etc.
-    resp.update(data)
-
-    # return {
-    #     "checked_in": now < valid_until,        #If now is before valid_until (before the 3 days), its TRUE so steam can be opened
-    #     "valid_until": valid_until.isoformat(),
-    #     **data
-    # }
-
-    return resp
-
-
-
-@app.api_route("/lock-toggle", methods=["GET", "POST"])
-def lock_toggle():
-    """
-    Toggle manual Steam lock.
-    - Only works if the last gym check-in is still within PASS_VALID_FOR.
-    - If there is no valid pass, you can’t toggle.
-    """
-    if not STORAGE_FILE.exists():
-        raise HTTPException(400, "No check-ins yet; cannot toggle lock")
-
-    data = json.loads(STORAGE_FILE.read_text())
-    try:
-        ts = datetime.fromisoformat(data["timestamp_utc"])
-    except Exception:
-        raise HTTPException(500, "Corrupted storage file")
-
-    now = datetime.now(timezone.utc)
-    valid_until = ts + PASS_VALID_FOR
-
-    # Require that you currently have a valid pass
-    if now >= valid_until:
-        raise HTTPException(400, "Last check-in expired; cannot toggle lock")
-
-    current = data.get("manual_lock", False)
-    new_state = not current
-    data["manual_lock"] = new_state
-    STORAGE_FILE.write_text(json.dumps(data))
-
-    msg = "Steam manually locked." if new_state else "Steam manual lock cleared."
     return {
-        "ok": True,
-        "manual_lock": new_state,
+        "checked_in": now < valid_until,        #If now is before valid_until (before the 3 days), its TRUE so steam can be opened
         "valid_until": valid_until.isoformat(),
-        "message": msg,
+        **data
     }
