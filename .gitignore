@@ -20,3 +20,5 @@ fly.toml
 
 
 monks.jpeg
+
+SYSTEM_FILES_TO_BE_PLACED/home-.config-systemd-user/files - no symlinks/setup.md
