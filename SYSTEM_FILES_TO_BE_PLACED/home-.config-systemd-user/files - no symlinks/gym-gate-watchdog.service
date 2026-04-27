@@ -13,4 +13,4 @@ Description=Gym Gate Steam watchdog
 
 [Service]
 Type=oneshot
-ExecStart=/home/aryan/.local/bin/gym-gate-watchdog.sh
+ExecStart=/home/$USER/.local/bin/gym-gate-watchdog.sh

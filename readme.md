@@ -57,6 +57,8 @@ You’ll be asked:
 
 This will generate `fly.toml`.
 
+I have my own fly.toml.example file so you see what mine looks like. You can ignore or delete this file.
+
 ### 3. Build and deploy
 
 ```bash
@@ -286,6 +288,19 @@ You have to do in 'gym_gate_check.py': DAYS_VALID = 2
 
 
 Now, even after Steam updates, the wrapper is re-applied.
+
+
+
+### 7. Optional Watchdog system to prevent cheating
+
+I made a Gym Gate Watchdog system. The system from above is not perfect. You can still open steam.real yourself, bypassing the system, or keeping steam open. The system prevents opening steam, but if you already have it open it only blocks opening links. The Gym Gate Watchdog system ensures that Steam cannot be forcefully opened unless a valid, recent gym check-in exists on the Fly.io server. This system not neccessery if you trust yourself, it's just to prevent cheating . But to build habits it's easier to make the system than use discipline. 
+There are 2 versions: v1 and v2. Watchdog v1 is dumb, and just checks periodically if the pass is expired. if it it, it force quits any running steam processes. The watchdog system v2 is smart, it will never close mid-game if the pass expires, unless you cheated. Both work using a systemctl service. More information and how to set it up are found in:
+
+```bash
+SYSTEM_FILES_TO_BE_PLACED/watchdog-setup.md
+```
+
+Read it well. It's pretty good imo.
 
 ---
 
