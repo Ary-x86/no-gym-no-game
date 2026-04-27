@@ -1,0 +1,16 @@
+# gym-gate-watchdog.service
+# Place this file at: ~/.config/systemd/user/gym-gate-watchdog.service
+#
+# PURPOSE:
+#   Oneshot service unit that runs the watchdog script once per timer tick.
+#   "Oneshot" means systemd runs it, waits for it to finish, then considers
+#   it done — correct for a script that checks and exits immediately.
+#
+# This unit is triggered by gym-gate-watchdog.timer, not started directly.
+
+[Unit]
+Description=Gym Gate Steam watchdog
+
+[Service]
+Type=oneshot
+ExecStart=/home/aryan/.local/bin/gym-gate-watchdog.sh

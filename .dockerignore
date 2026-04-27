@@ -1,4 +1,5 @@
 # flyctl launch added from .venv/.gitignore
 # Created by venv; see https://docs.python.org/3/library/venv.html
 .venv/**/*
+ignore/**/*
 fly.toml

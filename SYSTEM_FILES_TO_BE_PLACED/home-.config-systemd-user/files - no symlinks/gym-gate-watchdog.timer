@@ -1,0 +1,36 @@
+# gym-gate-watchdog.timer
+# Place this file at: ~/.config/systemd/user/gym-gate-watchdog.timer
+#
+# PURPOSE:
+#   Triggers gym-gate-watchdog.service on a schedule.
+#   - OnBootSec=2min   → first run 2 minutes after login (gives session time to start)
+#   - OnUnitActiveSec=5min → repeats every 5 minutes after last run
+#
+#   5 minutes is short enough to be annoying if you bypass the wrapper,
+#   but not so short it hammers the Fly.io server (1 HTTP request per tick).
+#
+# SETUP (run once after placing both .service and .timer files):
+#   systemctl --user daemon-reload
+#   systemctl --user enable --now gym-gate-watchdog.timer
+#
+#   --user        → runs in your user session (same session as Steam, so pkill works)
+#   daemon-reload → makes systemd re-read unit files from disk
+#   enable        → auto-starts the timer on every login
+#   --now         → also starts it immediately without needing a reboot
+#
+# VERIFY:
+#   systemctl --user status gym-gate-watchdog.timer   → check timer is active
+#   systemctl --user list-timers                      → see next scheduled run
+#
+# TO DISABLE:
+#   systemctl --user disable --now gym-gate-watchdog.timer
+
+[Unit]
+Description=Gym Gate Steam watchdog timer
+
+[Timer]
+OnBootSec=2min
+OnUnitActiveSec=5min
+
+[Install]
+WantedBy=timers.target
