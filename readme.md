@@ -1,6 +1,6 @@
 
 # Gym Gate Cloud  
-**This README file is generated entirely by GPT-5 (not by me). The idea of the pacman hook + the code came from GPT as well, it's a work around to a problem I faced. The python file is mostly my own work with comments written by me, for me, not for others so don't expect clarity.**  
+**This README file is generated partly by GPT-5. The original v1 was fully generated, later commits i just changed it in future updates. The idea of the pacman hook + the code came from GPT as well, it's a work around to a problem I faced. The python file is mostly my own work with comments written by me, for me, not for others so don't expect clarity.**  
 This is a hobby project. No guarantees. Use at your own risk.
 
 ---
@@ -301,6 +301,8 @@ SYSTEM_FILES_TO_BE_PLACED/watchdog-setup.md
 ```
 
 Read it well. It's pretty good imo.
+
+
 
 ---
 
